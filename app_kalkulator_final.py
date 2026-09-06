@@ -1,4 +1,3 @@
-
 import streamlit as st
 
 st.set_page_config(
@@ -198,6 +197,7 @@ st.divider()
 st.header("3. Pembentukan Board")
 num_board = st.number_input("Berapa ukuran pembentukan board yang ingin dimasukkan?", min_value=0, value=1, step=1)
 total_board = 0
+board_dimensions = [] # Menyimpan ukuran board untuk dipakai otomatis di Biaya Mall
 
 for i in range(int(num_board)):
     st.markdown(f"**Board ke-{i+1}**")
@@ -206,6 +206,9 @@ for i in range(int(num_board)):
         p = st.number_input(f"Panjang Board {i+1} (cm)", min_value=0.0, value=30.0, key=f"b_p_{i}")
     with col2:
         l = st.number_input(f"Lebar Board {i+1} (cm)", min_value=0.0, value=30.0, key=f"b_l_{i}")
+    
+    # Simpan ukuran p dan l ke dalam list
+    board_dimensions.append((p, l))
     
     cat = get_category_dim(p, l)
     harga = price_board[cat]
@@ -272,22 +275,21 @@ total_mall = 0
 
 if qty_board < 200:
     st.warning(f"⚠️ Qty Board & Lainnya ({qty_board} pcs) berada **di bawah 200 pcs**, sehingga biaya Mall diaktifkan otomatis.")
-    num_mall = st.number_input("Berapa ukuran mall yang ingin dimasukkan?", min_value=0, value=1, step=1)
     
-    for i in range(int(num_mall)):
-        st.markdown(f"**Mall ke-{i+1}**")
-        col1, col2 = st.columns(2)
-        with col1:
-            p = st.number_input(f"Panjang Mall {i+1} (cm)", min_value=0.0, value=30.0, key=f"mall_p_{i}")
-        with col2:
-            l = st.number_input(f"Lebar Mall {i+1} (cm)", min_value=0.0, value=30.0, key=f"mall_l_{i}")
-        
-        cat = get_category_dim(p, l)
-        harga_mall = price_board_mall[cat]
-        subtotal_mall = calc_cost(qty_board, harga_mall)
-        total_mall += subtotal_mall
-        st.write(f"👉 Kategori: **{cat}x{cat}** | Biaya Mall/pcs: **Rp {harga_mall:,}** | Subtotal: **Rp {subtotal_mall:,}** (Dikali {qty_board} pcs)")
-    
+    if num_board == 0:
+        st.info("Tidak ada data Pembentukan Board yang dimasukkan. Biaya Mall tidak dapat dihitung.")
+    else:
+        # Looping otomatis berdasarkan data board_dimensions dari Pembentukan Board
+        for i, (p, l) in enumerate(board_dimensions):
+            st.markdown(f"**Mall ke-{i+1} (Mengikuti ukuran Board ke-{i+1}: {p} cm x {l} cm)**")
+            
+            cat = get_category_dim(p, l)
+            harga_mall = price_board_mall[cat]
+            subtotal_mall = calc_cost(qty_board, harga_mall)
+            total_mall += subtotal_mall
+            
+            st.write(f"👉 Kategori: **{cat}x{cat}** | Biaya Mall/pcs: **Rp {harga_mall:,}** | Subtotal: **Rp {subtotal_mall:,}** (Dikali {qty_board} pcs)")
+            
     st.info(f"**Total Keseluruhan Biaya Mall: Rp {total_mall:,}**")
 else:
     st.success(f"✅ Qty Board & Lainnya ({qty_board} pcs) **sudah mencapai atau lebih dari 200 pcs**, sehingga Biaya Mall otomatis **tidak ada (0)**.")
