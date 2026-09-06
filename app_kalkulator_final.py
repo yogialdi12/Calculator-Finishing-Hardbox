@@ -1,12 +1,95 @@
 
 import streamlit as st
 
-st.set_page_config(page_title="Kalkulator Biaya Box - Bungkust.id", layout="wide")
+st.set_page_config(
+    page_title="Kalkulator Biaya Box - Bungkust.id",
+    page_icon="📦",
+    layout="wide"
+)
 
-# --- HEADER ELEGAN ---
-st.markdown("<h1 style='text-align: center; color: #2C3E50; margin-bottom: 0px;'>📦 Kalkulator Biaya Produksi Box</h1>", unsafe_allow_html=True)
-st.markdown("<h3 style='text-align: center; color: #7F8C8D; margin-top: 5px; font-weight: 400;'>Bungkust.id - PT Bungkust Kemasan Indonesia</h3>", unsafe_allow_html=True)
-st.markdown("<hr style='border: 1px solid #EAEAEA; margin-bottom: 30px;'>", unsafe_allow_html=True)
+# --- CSS ADAPTIF LIGHT & DARK MODE + BRANDING BUNGKUST.ID ---
+st.markdown("""
+    <style>
+    /* Styling dasar adaptif tema Light / Dark mode */
+    :root {
+        --brand-orange: #FF6B00;
+        --brand-navy: #1E293B;
+    }
+    
+    /* Header Container */
+    .header-container {
+        text-align: center;
+        padding: 10px 0px 20px 0px;
+        border-bottom: 2px solid var(--brand-orange);
+        margin-bottom: 25px;
+    }
+    
+    .brand-logo-text {
+        font-size: 32px;
+        font-weight: 800;
+        color: var(--brand-orange) !important;
+        letter-spacing: 1px;
+        margin: 0;
+        padding: 0;
+    }
+    
+    .brand-subtitle {
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--text-color);
+        opacity: 0.85;
+        margin-top: 5px;
+    }
+    
+    .brand-company {
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--text-color);
+        opacity: 0.65;
+    }
+    
+    /* Summary Card Styling */
+    .summary-card {
+        background-color: rgba(255, 107, 0, 0.08);
+        border-left: 5px solid var(--brand-orange);
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin: 15px 0px;
+    }
+    
+    /* Footer Styling */
+    .footer-container {
+        text-align: center;
+        margin-top: 50px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(128, 128, 128, 0.2);
+    }
+    
+    .footer-brand {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--brand-orange) !important;
+    }
+    
+    .footer-credit {
+        font-size: 13px;
+        font-style: italic;
+        color: var(--text-color);
+        opacity: 0.75;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# --- HEADER BUNGKUST.ID (TANPA LOGO) ---
+st.markdown("""
+    <div class="header-container">
+        <div class="brand-logo-text">Bungkust.id</div>
+        <div class="brand-company">PT BUNGKUST KEMASAN INDONESIA</div>
+        <div class="brand-subtitle">Kalkulator Biaya Finishing Hardbox</div>
+    </div>
+""", unsafe_allow_html=True)
 
 def get_category_dim(p, l):
     max_dim = max(p, l)
@@ -40,14 +123,20 @@ price_qc = {15: 100, 20: 200, 30: 300, 40: 400, 50: 500, 60: 600}
 price_aksesoris = {"Pita": 500, "Mata ayam": 250, "Magnet": 100, "Handel": 500, "Custom": 1000}
 
 with st.sidebar:
-    st.markdown("<h2 style='text-align: center; color: #2C3E50;'>Pengaturan Qty Order</h2>", unsafe_allow_html=True)
-    qty_lapisan = st.number_input("Qty untuk Lapisan (Sudah + Insheet)", min_value=1, value=110)
-    st.caption("Akan mengalikan biaya: Lapis Dalam & Lapis Luar.")
+    st.header("⚙️ Pengaturan Qty")
+    
+    qty_order = st.number_input("Qty Order (Pesanan Bersih)", min_value=1, value=100)
+    st.caption("Digunakan sebagai pembagi HPP per pcs.")
+    
+    st.divider()
+    
+    qty_lapisan = st.number_input("Qty untuk Lapisan (Global)", min_value=1, value=110)
+    st.caption("Default Qty untuk Lapis Dalam & Lapis Luar.")
     
     st.divider()
     
     qty_board = st.number_input("Qty untuk Board & Lainnya (Sudah + Insheet)", min_value=1, value=100)
-    st.caption("Akan mengalikan biaya: Board, Assembly, QC, Aksesoris, dan Mall.")
+    st.caption("Mengalikan biaya Board, Assembly, QC, Aksesoris, & Mall.")
 
 # --- 1. LAPIS DALAM ---
 st.header("1. Lapis Dalam")
@@ -62,11 +151,17 @@ for i in range(int(num_ld)):
     with col2:
         l = st.number_input(f"Lebar Lapis Dalam {i+1} (cm)", min_value=0.0, value=35.0, key=f"ld_l_{i}")
     
+    use_custom_qty_ld = st.checkbox(f"Gunakan Qty Custom untuk Lapis Dalam {i+1}?", key=f"ld_check_{i}")
+    if use_custom_qty_ld:
+        current_qty_ld = st.number_input(f"Qty Custom Lapis Dalam {i+1}", min_value=1, value=qty_lapisan, key=f"ld_custom_qty_{i}")
+    else:
+        current_qty_ld = qty_lapisan
+        
     cat = get_category_dim(p, l)
     harga = price_lapis_dalam[cat]
-    subtotal = calc_cost(qty_lapisan, harga)
+    subtotal = calc_cost(current_qty_ld, harga)
     total_ld += subtotal
-    st.write(f"👉 Kategori: **{cat}x{cat}** | Biaya/pcs: **Rp {harga}** | Subtotal: **Rp {subtotal:,}** (Dikali {qty_lapisan} pcs)")
+    st.write(f"👉 Kategori: **{cat}x{cat}** | Biaya/pcs: **Rp {harga:,}** | Subtotal: **Rp {subtotal:,}** (Dikali {current_qty_ld} pcs)")
 
 st.info(f"**Total Keseluruhan Lapis Dalam: Rp {total_ld:,}**")
 st.divider()
@@ -84,11 +179,17 @@ for i in range(int(num_ll)):
     with col2:
         l = st.number_input(f"Lebar Lapis Luar {i+1} (cm)", min_value=0.0, value=45.0, key=f"ll_l_{i}")
     
+    use_custom_qty_ll = st.checkbox(f"Gunakan Qty Custom untuk Lapis Luar {i+1}?", key=f"ll_check_{i}")
+    if use_custom_qty_ll:
+        current_qty_ll = st.number_input(f"Qty Custom Lapis Luar {i+1}", min_value=1, value=qty_lapisan, key=f"ll_custom_qty_{i}")
+    else:
+        current_qty_ll = qty_lapisan
+        
     cat = get_category_dim(p, l)
     harga = price_lapis_luar[cat]
-    subtotal = calc_cost(qty_lapisan, harga)
+    subtotal = calc_cost(current_qty_ll, harga)
     total_ll += subtotal
-    st.write(f"👉 Kategori: **{cat}x{cat}** | Biaya/pcs: **Rp {harga}** | Subtotal: **Rp {subtotal:,}** (Dikali {qty_lapisan} pcs)")
+    st.write(f"👉 Kategori: **{cat}x{cat}** | Biaya/pcs: **Rp {harga:,}** | Subtotal: **Rp {subtotal:,}** (Dikali {current_qty_ll} pcs)")
 
 st.info(f"**Total Keseluruhan Lapis Luar: Rp {total_ll:,}**")
 st.divider()
@@ -110,7 +211,7 @@ for i in range(int(num_board)):
     harga = price_board[cat]
     subtotal = calc_cost(qty_board, harga)
     total_board += subtotal
-    st.write(f"👉 Kategori: **{cat}x{cat}** | Biaya/pcs: **Rp {harga}** | Subtotal: **Rp {subtotal:,}** (Dikali {qty_board} pcs)")
+    st.write(f"👉 Kategori: **{cat}x{cat}** | Biaya/pcs: **Rp {harga:,}** | Subtotal: **Rp {subtotal:,}** (Dikali {qty_board} pcs)")
 
 st.info(f"**Total Keseluruhan Pembentukan Board: Rp {total_board:,}**")
 st.divider()
@@ -136,13 +237,13 @@ total_qc = calc_cost(qty_board, harga_qc)
 st.write(f"**Kategori Ukuran Box Assembly & QC: {cat_box}**")
 col_res1, col_res2 = st.columns(2)
 with col_res1:
-    st.info(f"**Total Biaya Assembly:** Rp {total_ass:,} (Biaya/pcs: Rp {harga_ass} | Dikali {qty_board} pcs)")
+    st.info(f"**Total Biaya Assembly:** Rp {total_ass:,} (Biaya/pcs: Rp {harga_ass:,} | Dikali {qty_board} pcs)")
 with col_res2:
-    st.info(f"**Total Biaya QC & Packing:** Rp {total_qc:,} (Biaya/pcs: Rp {harga_qc} | Dikali {qty_board} pcs)")
+    st.info(f"**Total Biaya QC & Packing:** Rp {total_qc:,} (Biaya/pcs: Rp {harga_qc:,} | Dikali {qty_board} pcs)")
 
 st.divider()
 
-# --- 5. PEMASANGAN AKSESORIS (BISA BANYAK JENIS & QTY) ---
+# --- 5. PEMASANGAN AKSESORIS ---
 st.header("5. Pemasangan Aksesoris")
 num_acc = st.number_input("Berapa jenis aksesoris yang ingin dimasukkan?", min_value=0, value=1, step=1)
 total_acc = 0
@@ -185,7 +286,7 @@ if qty_board < 200:
         harga_mall = price_board_mall[cat]
         subtotal_mall = calc_cost(qty_board, harga_mall)
         total_mall += subtotal_mall
-        st.write(f"👉 Kategori: **{cat}x{cat}** | Biaya Mall/pcs: **Rp {harga_mall}** | Subtotal: **Rp {subtotal_mall:,}** (Dikali {qty_board} pcs)")
+        st.write(f"👉 Kategori: **{cat}x{cat}** | Biaya Mall/pcs: **Rp {harga_mall:,}** | Subtotal: **Rp {subtotal_mall:,}** (Dikali {qty_board} pcs)")
     
     st.info(f"**Total Keseluruhan Biaya Mall: Rp {total_mall:,}**")
 else:
@@ -198,18 +299,17 @@ grand_total = total_ld + total_ll + total_board + total_ass + total_qc + total_a
 
 st.header("Ringkasan Biaya")
 st.success(f"**GRAND TOTAL KESELURUHAN (Semua Proses): Rp {grand_total:,}**")
-if qty_board > 0:
-    grand_total_per_pcs = grand_total / qty_board
-    st.warning(f"**Harga Rata-Rata per Pcs Jadi (Dibagi Qty Board {qty_board} pcs): Rp {grand_total_per_pcs:,.2f}**")
+if qty_order > 0:
+    grand_total_per_pcs = grand_total / qty_order
+    st.warning(f"**Harga Pokok per Pcs Jadi (Dibagi Qty Order {qty_order} pcs): Rp {grand_total_per_pcs:,.2f}**")
 
-# --- FOOTER & CREDIT ELEGAN ---
-st.markdown("<br><br>", unsafe_allow_html=True)
+# --- FOOTER & CREDIT ADAPTIF ---
 st.markdown("""
-    <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #EAEAEA;">
-        <p style="color: #2C3E50; font-size: 15px; font-weight: 600; margin-bottom: 2px;">
+    <div class="footer-container">
+        <p class="footer-brand">
             Bungkust.id - Packaging Production Management
         </p>
-        <p style="color: #7F8C8D; font-size: 13px; font-style: italic; letter-spacing: 0.5px;">
+        <p class="footer-credit">
             Designed & Developed by Prayogi Aldiansyah Saputra
         </p>
     </div>
